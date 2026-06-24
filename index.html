@@ -1,607 +1,549 @@
-
 <!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0b1120" />
-  <title>NFC Teknik Tarayıcı</title>
+  <title>NFC Kart Teknik Görüntüleyici</title>
   <style>
-    :root {
-      --bg-1: #050816;
-      --bg-2: #0b1120;
-      --panel: rgba(15, 23, 42, 0.62);
-      --panel-strong: rgba(15, 23, 42, 0.84);
-      --border: rgba(255, 255, 255, 0.12);
-      --text: #e5eefc;
-      --muted: #97a6c0;
-      --accent: #59f1d4;
-      --accent-2: #5aa8ff;
-      --warn: #ffcf5a;
-      --danger: #ff6b7a;
-      --ok: #50e3a4;
-      --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
-      --radius: 24px;
-      --radius-sm: 18px;
-      --blur: 18px;
-      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    :root{
+      --bg1:#050816;
+      --bg2:#0b1120;
+      --glass:rgba(15,23,42,.62);
+      --glass-2:rgba(255,255,255,.05);
+      --border:rgba(255,255,255,.12);
+      --text:#eaf2ff;
+      --muted:#99a8c4;
+      --accent:#58f1d2;
+      --accent2:#63a9ff;
+      --ok:#4fe39f;
+      --warn:#ffd166;
+      --danger:#ff6b7f;
+      --shadow:0 20px 50px rgba(0,0,0,.35);
+      --radius:24px;
+      --radius-sm:18px;
+      --blur:18px;
+      --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      --sans:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
     }
 
-    * { box-sizing: border-box; }
-
-    html, body {
-      margin: 0;
-      min-height: 100%;
-      font-family: var(--sans);
-      color: var(--text);
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%}
+    body{
+      font-family:var(--sans);
+      color:var(--text);
       background:
-        radial-gradient(circle at 20% 10%, rgba(90, 168, 255, 0.22), transparent 30%),
-        radial-gradient(circle at 85% 15%, rgba(89, 241, 212, 0.18), transparent 25%),
-        radial-gradient(circle at 50% 100%, rgba(135, 76, 255, 0.16), transparent 35%),
-        linear-gradient(180deg, var(--bg-1), var(--bg-2));
-      background-attachment: fixed;
+        radial-gradient(circle at 15% 10%, rgba(99,169,255,.18), transparent 30%),
+        radial-gradient(circle at 85% 15%, rgba(88,241,210,.16), transparent 28%),
+        radial-gradient(circle at 50% 100%, rgba(154,93,255,.14), transparent 35%),
+        linear-gradient(180deg,var(--bg1),var(--bg2));
+      background-attachment:fixed;
+      padding:18px;
+      display:flex;
+      justify-content:center;
     }
 
-    body {
-      display: flex;
-      justify-content: center;
-      padding: 18px;
+    .app{
+      width:100%;
+      max-width:1100px;
+      display:grid;
+      gap:18px;
+      padding:max(6px, env(safe-area-inset-top)) 0 max(8px, env(safe-area-inset-bottom));
     }
 
-    .app {
-      width: 100%;
-      max-width: 1080px;
-      display: grid;
-      gap: 18px;
-      padding: max(6px, env(safe-area-inset-top)) 0 max(8px, env(safe-area-inset-bottom));
+    .glass{
+      background:var(--glass);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(var(--blur));
+      -webkit-backdrop-filter:blur(var(--blur));
     }
 
-    .hero,
-    .panel,
-    .history-item,
-    .modal-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(var(--blur));
-      -webkit-backdrop-filter: blur(var(--blur));
+    .hero{
+      padding:24px;
+      position:relative;
+      overflow:hidden;
     }
 
-    .hero {
-      position: relative;
-      overflow: hidden;
-      padding: 24px;
+    .hero::before,
+    .hero::after{
+      content:"";
+      position:absolute;
+      border-radius:999px;
+      filter:blur(20px);
+      pointer-events:none;
+    }
+    .hero::before{
+      width:240px;height:240px;left:-80px;top:-60px;
+      background:rgba(88,241,210,.18);
+    }
+    .hero::after{
+      width:260px;height:260px;right:-90px;bottom:-120px;
+      background:rgba(99,169,255,.16);
     }
 
-    .hero::before {
-      content: "";
-      position: absolute;
-      inset: -20% auto auto -10%;
-      width: 220px;
-      height: 220px;
-      background: radial-gradient(circle, rgba(89, 241, 212, 0.24), transparent 65%);
-      pointer-events: none;
+    .hero-top{
+      position:relative;
+      z-index:1;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:14px;
+      flex-wrap:wrap;
     }
 
-    .hero::after {
-      content: "";
-      position: absolute;
-      inset: auto -5% -35% auto;
-      width: 260px;
-      height: 260px;
-      background: radial-gradient(circle, rgba(90, 168, 255, 0.22), transparent 65%);
-      pointer-events: none;
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      color:var(--muted);
+      font-size:.84rem;
     }
 
-    .hero-top {
-      position: relative;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 14px;
-      flex-wrap: wrap;
-      z-index: 1;
+    h1{
+      margin:14px 0 10px;
+      font-size:clamp(1.9rem, 4vw, 3rem);
+      line-height:1.08;
+      letter-spacing:-.03em;
+      max-width:12ch;
     }
 
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--muted);
-      font-size: 0.84rem;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+    .lead{
+      margin:0;
+      max-width:70ch;
+      color:var(--muted);
+      line-height:1.65;
+      font-size:.98rem;
     }
 
-    h1 {
-      margin: 14px 0 10px;
-      font-size: clamp(1.8rem, 4vw, 3rem);
-      line-height: 1.08;
-      letter-spacing: -0.03em;
-      max-width: 11ch;
+    .hero-stats{
+      margin-top:22px;
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+      position:relative;
+      z-index:1;
     }
 
-    .lead {
-      margin: 0;
-      max-width: 65ch;
-      color: var(--muted);
-      line-height: 1.65;
-      font-size: 0.98rem;
+    .stat{
+      padding:14px;
+      border-radius:20px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
     }
 
-    .hero-stats {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 22px;
-      position: relative;
-      z-index: 1;
+    .stat small{
+      display:block;
+      color:var(--muted);
+      margin-bottom:8px;
+      font-size:.78rem;
     }
 
-    .stat {
-      padding: 14px;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+    .stat strong{
+      display:block;
+      font-size:1rem;
+      line-height:1.45;
+      letter-spacing:-.02em;
+      word-break:break-word;
     }
 
-    .stat-label {
-      font-size: 0.78rem;
-      color: var(--muted);
-      margin-bottom: 8px;
-      display: block;
+    .layout{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:18px;
     }
 
-    .stat-value {
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      word-break: break-word;
+    .panel{
+      padding:20px;
     }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 18px;
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:14px;
+      flex-wrap:wrap;
     }
 
-    .panel {
-      padding: 20px;
+    .panel-title{
+      margin:0;
+      font-size:1.05rem;
+      letter-spacing:-.02em;
     }
 
-    .panel-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
+    .panel-sub{
+      color:var(--muted);
+      margin:6px 0 0;
+      font-size:.93rem;
+      line-height:1.6;
     }
 
-    .panel-title {
-      margin: 0;
-      font-size: 1.05rem;
-      letter-spacing: -0.02em;
+    .status-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:9px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.1);
+      white-space:nowrap;
+      font-size:.86rem;
     }
 
-    .panel-sub {
-      color: var(--muted);
-      margin: 6px 0 0;
-      font-size: 0.92rem;
-      line-height: 1.55;
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      background:var(--muted);
+    }
+    .dot.ok{background:var(--ok)}
+    .dot.warn{background:var(--warn)}
+    .dot.danger{background:var(--danger)}
+    .dot.scan{
+      background:var(--accent);
+      animation:pulse 1.35s infinite;
     }
 
-    .status-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 12px;
-      border-radius: 999px;
-      font-size: 0.86rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(255, 255, 255, 0.05);
-      white-space: nowrap;
+    @keyframes pulse{
+      0%{box-shadow:0 0 0 0 rgba(88,241,210,.55)}
+      70%{box-shadow:0 0 0 14px rgba(88,241,210,0)}
+      100%{box-shadow:0 0 0 0 rgba(88,241,210,0)}
     }
 
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--muted);
-      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+    .scan-zone{
+      min-height:300px;
+      display:grid;
+      place-items:center;
+      padding:14px;
     }
 
-    .dot.ok { background: var(--ok); }
-    .dot.warn { background: var(--warn); }
-    .dot.danger { background: var(--danger); }
-    .dot.scan {
-      background: var(--accent);
-      animation: pulse 1.35s infinite;
+    .scanner{
+      width:min(100%,360px);
+      aspect-ratio:1/1;
+      border-radius:32px;
+      position:relative;
+      overflow:hidden;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.1);
     }
 
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(89, 241, 212, 0.55); }
-      70% { box-shadow: 0 0 0 14px rgba(89, 241, 212, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(89, 241, 212, 0); }
+    .scanner::before,
+    .scanner::after{
+      content:"";
+      position:absolute;
+      inset:12%;
+      border-radius:28px;
+      border:1px solid rgba(255,255,255,.08);
     }
 
-    .scan-zone {
-      display: grid;
-      place-items: center;
-      min-height: 280px;
-      padding: 14px;
+    .scanner::after{
+      inset:auto 0 0 0;
+      height:48%;
+      border:none;
+      background:linear-gradient(180deg, transparent, rgba(88,241,210,.08));
     }
 
-    .scanner-shell {
-      width: min(100%, 360px);
-      aspect-ratio: 1 / 1;
-      border-radius: 32px;
-      position: relative;
-      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
-      border: 1px solid rgba(255,255,255,0.09);
-      overflow: hidden;
-      display: grid;
-      place-items: center;
+    .core{
+      width:68%;
+      aspect-ratio:1/1;
+      border-radius:50%;
+      position:relative;
+      display:grid;
+      place-items:center;
+      border:1px solid rgba(255,255,255,.15);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(99,169,255,.16), rgba(255,255,255,.02) 55%, transparent 56%),
+        radial-gradient(circle at 50% 50%, rgba(88,241,210,.10), transparent 72%);
+      overflow:hidden;
     }
 
-    .scanner-shell::before,
-    .scanner-shell::after {
-      content: "";
-      position: absolute;
-      inset: 12%;
-      border-radius: 28px;
-      border: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .scanner-shell::after {
-      inset: auto 0 0 0;
-      height: 48%;
-      border: none;
-      background: linear-gradient(180deg, transparent, rgba(89,241,212,0.08));
-    }
-
-    .scanner-core {
-      position: relative;
-      width: 68%;
-      aspect-ratio: 1 / 1;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: radial-gradient(circle at 50% 50%, rgba(90,168,255,0.18), rgba(255,255,255,0.02) 55%, transparent 56%),
-                  radial-gradient(circle at 50% 50%, rgba(89,241,212,0.12), transparent 72%);
-      display: grid;
-      place-items: center;
-      overflow: hidden;
-    }
-
-    .scanner-core svg {
-      width: 44%;
-      height: 44%;
-      opacity: 0.95;
-      filter: drop-shadow(0 6px 18px rgba(89,241,212,0.2));
+    .core svg{
+      width:44%;
+      height:44%;
+      opacity:.96;
+      filter:drop-shadow(0 6px 18px rgba(88,241,210,.22));
     }
 
     .ring,
     .ring::before,
-    .ring::after {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 1px solid rgba(89,241,212,0.16);
-      content: "";
+    .ring::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius:50%;
+      border:1px solid rgba(88,241,210,.16);
+    }
+    .ring::before{inset:10%}
+    .ring::after{inset:20%}
+
+    .scan-line{
+      position:absolute;
+      width:120%;
+      height:3px;
+      opacity:0;
+      transform:translateY(-130px);
+      background:linear-gradient(90deg, transparent, rgba(88,241,210,.95), transparent);
+      filter:drop-shadow(0 0 12px rgba(88,241,210,.5));
     }
 
-    .ring::before { inset: 10%; }
-    .ring::after { inset: 20%; }
-
-    .scan-line {
-      position: absolute;
-      width: 120%;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, rgba(89,241,212,0.95), transparent);
-      filter: drop-shadow(0 0 12px rgba(89,241,212,0.5));
-      opacity: 0;
-      transform: translateY(-130px);
+    .scanner.scanning .scan-line{
+      opacity:1;
+      animation:scanLine 1.8s ease-in-out infinite;
     }
 
-    .scanner-shell.scanning .scan-line {
-      opacity: 1;
-      animation: scanLine 1.8s ease-in-out infinite;
+    .scanner.scanning .core{
+      animation:glow 1.8s ease-in-out infinite;
     }
 
-    .scanner-shell.scanning .scanner-core {
-      animation: glow 1.8s ease-in-out infinite;
+    @keyframes scanLine{
+      0%{transform:translateY(-120px)}
+      50%{transform:translateY(120px)}
+      100%{transform:translateY(-120px)}
     }
 
-    @keyframes scanLine {
-      0%   { transform: translateY(-120px); }
-      50%  { transform: translateY(120px); }
-      100% { transform: translateY(-120px); }
+    @keyframes glow{
+      0%,100%{box-shadow:0 0 0 rgba(88,241,210,0)}
+      50%{box-shadow:0 0 40px rgba(88,241,210,.18)}
     }
 
-    @keyframes glow {
-      0%,100% { box-shadow: 0 0 0 rgba(89,241,212,0); }
-      50% { box-shadow: 0 0 40px rgba(89,241,212,0.18); }
+    .controls{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:16px;
     }
 
-    .controls {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 18px;
+    button{
+      appearance:none;
+      border:none;
+      cursor:pointer;
+      font:inherit;
+      font-weight:700;
+      min-height:50px;
+      border-radius:18px;
+      padding:14px 18px;
+      transition:transform .18s ease, opacity .18s ease, background .18s ease;
+    }
+    button:hover{transform:translateY(-1px)}
+    button:active{transform:translateY(0)}
+    button:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
+    .primary{
+      color:#04111b;
+      background:linear-gradient(135deg,var(--accent),#9cf3e3);
+      box-shadow:0 12px 28px rgba(88,241,210,.22);
+      flex:1 1 180px;
     }
 
-    button {
-      appearance: none;
-      border: none;
-      cursor: pointer;
-      border-radius: 18px;
-      padding: 14px 18px;
-      font: inherit;
-      font-weight: 700;
-      transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
-      min-height: 50px;
+    .secondary{
+      color:var(--text);
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.1);
+      flex:1 1 150px;
     }
 
-    button:hover { transform: translateY(-1px); }
-    button:active { transform: translateY(0); }
-    button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
-
-    .primary {
-      color: #04111b;
-      background: linear-gradient(135deg, var(--accent), #9ff5e4);
-      box-shadow: 0 12px 28px rgba(89, 241, 212, 0.22);
-      flex: 1 1 180px;
+    .messages{
+      display:grid;
+      gap:10px;
+      margin-top:14px;
     }
 
-    .secondary {
-      color: var(--text);
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      flex: 1 1 150px;
+    .notice{
+      padding:14px 16px;
+      border-radius:18px;
+      line-height:1.58;
+      font-size:.92rem;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .notice.warn{
+      background:rgba(255,209,102,.08);
+      border-color:rgba(255,209,102,.2);
+    }
+    .notice.danger{
+      background:rgba(255,107,127,.08);
+      border-color:rgba(255,107,127,.2);
+    }
+    .notice.ok{
+      background:rgba(79,227,159,.08);
+      border-color:rgba(79,227,159,.2);
     }
 
-    .messages {
-      display: grid;
-      gap: 10px;
-      margin-top: 14px;
+    .detail-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
     }
 
-    .notice {
-      padding: 14px 16px;
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,0.08);
-      line-height: 1.55;
-      font-size: 0.92rem;
-      background: rgba(255,255,255,0.04);
+    .detail{
+      min-height:100px;
+      padding:14px;
+      border-radius:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.07);
     }
 
-    .notice.warn {
-      background: rgba(255, 207, 90, 0.08);
-      border-color: rgba(255, 207, 90, 0.2);
+    .detail label{
+      display:block;
+      margin-bottom:10px;
+      color:var(--muted);
+      font-size:.78rem;
     }
 
-    .notice.danger {
-      background: rgba(255, 107, 122, 0.08);
-      border-color: rgba(255, 107, 122, 0.2);
+    .value{
+      font-size:1rem;
+      line-height:1.55;
+      font-weight:700;
+      word-break:break-word;
     }
 
-    .notice.ok {
-      background: rgba(80, 227, 164, 0.08);
-      border-color: rgba(80, 227, 164, 0.2);
+    .mono{font-family:var(--mono)}
+
+    .records,.history-list{display:grid;gap:10px}
+    .records{margin-top:14px}
+
+    .record, .history-item{
+      padding:14px;
+      border-radius:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.07);
     }
 
-    .detail-grid {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .record-head, .history-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:8px;
     }
 
-    .detail {
-      padding: 14px;
-      border-radius: 18px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.07);
-      min-height: 92px;
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(99,169,255,.12);
+      color:#bed9ff;
+      border:1px solid rgba(99,169,255,.22);
+      font-size:.78rem;
     }
 
-    .detail label {
-      display: block;
-      color: var(--muted);
-      font-size: 0.78rem;
-      margin-bottom: 10px;
+    .record-body, .history-meta{
+      color:var(--muted);
+      line-height:1.58;
+      font-size:.9rem;
+      white-space:pre-wrap;
+      word-break:break-word;
     }
 
-    .detail .value {
-      font-size: 1rem;
-      font-weight: 700;
-      line-height: 1.5;
-      word-break: break-word;
+    .history-title{
+      font-weight:700;
+      letter-spacing:-.02em;
+      margin-bottom:6px;
     }
 
-    .mono { font-family: var(--mono); }
-
-    .records {
-      margin-top: 14px;
-      display: grid;
-      gap: 10px;
+    .history-empty{
+      color:var(--muted);
+      line-height:1.6;
+      padding:8px 2px 0;
     }
 
-    .record {
-      padding: 12px 14px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.07);
+    .footer{
+      text-align:center;
+      color:var(--muted);
+      font-size:.84rem;
+      line-height:1.6;
+      padding:0 10px 10px;
     }
 
-    .record-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
+    @media (max-width:860px){
+      .layout{grid-template-columns:1fr}
+      .hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .detail-grid{grid-template-columns:1fr}
     }
 
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(90, 168, 255, 0.12);
-      color: #b7d6ff;
-      font-size: 0.78rem;
-      border: 1px solid rgba(90,168,255,0.22);
-    }
-
-    .record-body {
-      color: var(--muted);
-      line-height: 1.55;
-      font-size: 0.9rem;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .history-list {
-      display: grid;
-      gap: 12px;
-    }
-
-    .history-empty {
-      color: var(--muted);
-      line-height: 1.6;
-      padding: 12px 4px 2px;
-    }
-
-    .history-item {
-      padding: 16px;
-      border-radius: 22px;
-      background: rgba(255,255,255,0.04);
-    }
-
-    .history-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-
-    .history-title {
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 6px;
-    }
-
-    .history-meta {
-      color: var(--muted);
-      font-size: 0.88rem;
-      line-height: 1.55;
-    }
-
-    .history-chips {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .footer-note {
-      color: var(--muted);
-      text-align: center;
-      font-size: 0.84rem;
-      line-height: 1.6;
-      padding: 2px 12px 10px;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    @media (max-width: 860px) {
-      .layout { grid-template-columns: 1fr; }
-      .hero-stats { grid-template-columns: 1fr; }
-      .detail-grid { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 520px) {
-      body { padding: 12px; }
-      .hero, .panel { padding: 18px; }
-      .scanner-shell { border-radius: 24px; }
-      .controls { flex-direction: column; }
-      button { width: 100%; }
+    @media (max-width:540px){
+      body{padding:12px}
+      .hero,.panel{padding:18px}
+      .hero-stats{grid-template-columns:1fr}
+      .controls{flex-direction:column}
+      button{width:100%}
     }
   </style>
 </head>
 <body>
   <main class="app">
-    <section class="hero" aria-labelledby="baslik">
+    <section class="hero glass">
       <div class="hero-top">
         <div>
-          <span class="eyebrow">📶 Web NFC Teknik Görüntüleyici</span>
-          <h1 id="baslik">Güvenli NFC tarama deneyimi</h1>
+          <span class="badge">📶 Web NFC · Teknik ve Güvenli Görüntüleme</span>
+          <h1>NFC kartını genel ve yasal sınır içinde tanımla</h1>
           <p class="lead">
-            Bu uygulama yalnızca taranan NFC etiketinin veya uyumlu kartın erişilebilen teknik bilgilerini gösterir.
-            Kişisel veri okumaya, kimlik ya da banka kartı içeriğini çözmeye çalışmaz ve verileri internete göndermez.
+            Bu uygulama yalnızca tarayıcının erişime açtığı teknik NFC bilgilerini gösterir.
+            Kişisel verileri okumaya çalışmaz, kimlik veya banka kartı içeriğini çözmeye çalışmaz,
+            verileri internete göndermez ve yalnızca genel sınıflandırma yapar.
           </p>
         </div>
-        <div class="status-chip" id="globalStatus" aria-live="polite">
-          <span class="dot warn" id="statusDot"></span>
-          <span id="statusText">Başlatılıyor...</span>
+        <div class="status-chip" id="globalStatus">
+          <span class="dot warn" id="globalDot"></span>
+          <span id="globalText">Başlatılıyor...</span>
         </div>
       </div>
 
-      <div class="hero-stats" aria-label="Özet durumlar">
+      <div class="hero-stats">
         <div class="stat">
-          <span class="stat-label">Tarayıcı desteği</span>
-          <div class="stat-value" id="supportSummary">Kontrol ediliyor</div>
+          <small>Tarayıcı desteği</small>
+          <strong id="supportValue">Kontrol ediliyor</strong>
         </div>
         <div class="stat">
-          <span class="stat-label">Son algılanan UID</span>
-          <div class="stat-value mono" id="lastUidSummary">Henüz yok</div>
+          <small>Son UID</small>
+          <strong id="uidSummary" class="mono">Henüz yok</strong>
         </div>
         <div class="stat">
-          <span class="stat-label">Toplam tarama</span>
-          <div class="stat-value" id="scanCountSummary">0</div>
+          <small>Son genel sınıf</small>
+          <strong id="classSummary">Henüz yok</strong>
+        </div>
+        <div class="stat">
+          <small>Toplam tarama</small>
+          <strong id="countSummary">0</strong>
         </div>
       </div>
     </section>
 
     <section class="layout">
-      <div class="panel">
+      <section class="panel glass">
         <div class="panel-head">
           <div>
-            <h2 class="panel-title">Canlı tarama alanı</h2>
-            <p class="panel-sub">Telefonunuzu uyumlu bir NFC etiketi veya karta yaklaştırın. Destek ve izin durumuna göre uygulama sizi yönlendirecektir.</p>
+            <h2 class="panel-title">Canlı NFC tarama</h2>
+            <p class="panel-sub">
+              Uyumlu cihazda, HTTPS altında ve kullanıcı etkileşimi sonrasında çalışır.
+              Telefonu etikete veya karta yaklaştırın.
+            </p>
           </div>
-          <div class="status-chip" id="scanStatusChip">
-            <span class="dot warn" id="scanStatusDot"></span>
-            <span id="scanStatusText">Hazır değil</span>
+          <div class="status-chip">
+            <span class="dot warn" id="scanDot"></span>
+            <span id="scanText">Hazır değil</span>
           </div>
         </div>
 
         <div class="scan-zone">
-          <div class="scanner-shell" id="scannerShell" aria-hidden="true">
+          <div class="scanner" id="scanner" aria-hidden="true">
             <div class="scan-line"></div>
-            <div class="scanner-core">
+            <div class="core">
               <div class="ring"></div>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
                 <path d="M7.5 16.5a6.5 6.5 0 0 1 0-9m3 6a2.5 2.5 0 0 1 0-3m3.75 6.75a6.5 6.5 0 0 0 0-9m-9.75 12a10 10 0 0 1 0-15m13.5 15a10 10 0 0 0 0-15" stroke="url(#g)" stroke-width="1.8" stroke-linecap="round"/>
                 <defs>
                   <linearGradient id="g" x1="4" y1="12" x2="20" y2="12" gradientUnits="userSpaceOnUse">
-                    <stop stop-color="#59F1D4"/>
-                    <stop offset="1" stop-color="#5AA8FF"/>
+                    <stop stop-color="#58F1D2"/>
+                    <stop offset="1" stop-color="#63A9FF"/>
                   </linearGradient>
                 </defs>
               </svg>
@@ -610,333 +552,421 @@
         </div>
 
         <div class="controls">
-          <button class="primary" id="startButton" type="button">NFC Tara</button>
-          <button class="secondary" id="stopButton" type="button" disabled>Taramayı Durdur</button>
-          <button class="secondary" id="clearHistoryButton" type="button">Geçmişi Temizle</button>
+          <button id="startBtn" class="primary" type="button">NFC Tara</button>
+          <button id="stopBtn" class="secondary" type="button" disabled>Taramayı Durdur</button>
+          <button id="clearBtn" class="secondary" type="button">Geçmişi Temizle</button>
         </div>
 
-        <div class="messages" id="messages" aria-live="polite"></div>
-      </div>
+        <div class="messages" id="messages"></div>
+      </section>
 
-      <div class="panel">
+      <section class="panel glass">
         <div class="panel-head">
           <div>
-            <h2 class="panel-title">Son algılanan teknik bilgiler</h2>
-            <p class="panel-sub">Web NFC API tarafından erişilebilen güvenli ve teknik düzeyde bilgiler gösterilir.</p>
+            <h2 class="panel-title">Son algılanan bilgiler</h2>
+            <p class="panel-sub">
+              Aşağıdaki sonuçlar teknik erişim sınırı içindedir. Bu çıktı resmî tespit değildir.
+            </p>
           </div>
         </div>
 
         <div class="detail-grid">
           <div class="detail">
-            <label>Kart / etiket türü tahmini</label>
-            <div class="value" id="cardType">Henüz tarama yapılmadı</div>
+            <label>Genel kart / taşıyıcı sınıfı</label>
+            <div class="value" id="generalClass">Henüz tarama yapılmadı</div>
+          </div>
+          <div class="detail">
+            <label>Yasal / etik sınır notu</label>
+            <div class="value" id="legalNote">Yalnızca genel ve teknik değerlendirme gösterilir</div>
           </div>
           <div class="detail">
             <label>Algılanan teknoloji</label>
             <div class="value" id="techType">Kullanılabilir olduğunda gösterilir</div>
           </div>
           <div class="detail">
-            <label>UID / Seri numarası</label>
+            <label>UID / seri numarası</label>
             <div class="value mono" id="uidValue">Yok</div>
           </div>
           <div class="detail">
             <label>Tarama zamanı</label>
-            <div class="value" id="scanTime">-</div>
+            <div class="value" id="timeValue">-</div>
+          </div>
+          <div class="detail">
+            <label>Kayıt özeti</label>
+            <div class="value" id="recordCount">Henüz veri yok</div>
           </div>
         </div>
 
         <div class="records" id="records"></div>
-      </div>
+      </section>
     </section>
 
-    <section class="panel">
+    <section class="panel glass">
       <div class="panel-head">
         <div>
           <h2 class="panel-title">Son taramalar</h2>
-          <p class="panel-sub">Son beş başarılı tarama cihaz üzerinde tutulur. Sayfa yenilenirse saklanmaz.</p>
+          <p class="panel-sub">
+            Son beş tarama yalnızca bu sayfada geçici olarak tutulur. Yenileyince temizlenir.
+          </p>
         </div>
       </div>
-      <div class="history-list" id="historyList"></div>
+      <div class="history-list" id="history"></div>
     </section>
 
-    <p class="footer-note">
-      Not: Web NFC genellikle yalnızca uyumlu Android cihazlarda ve güvenli bağlantı altında çalışır. Bazı kart türlerinde UID veya teknoloji adı tarayıcı tarafından paylaşılmayabilir.
+    <p class="footer">
+      Bu arayüz, kart içeriğini çözmeye veya kişisel veri okumaya çalışmaz. Sadece erişilebilen teknik NFC bilgisini ve genel sınıf tahminini gösterir.
     </p>
   </main>
 
   <script>
     (() => {
-      'use strict';
+      "use strict";
+
+      const $ = (id) => document.getElementById(id);
 
       const els = {
-        globalStatus: document.getElementById('globalStatus'),
-        statusDot: document.getElementById('statusDot'),
-        statusText: document.getElementById('statusText'),
-        supportSummary: document.getElementById('supportSummary'),
-        lastUidSummary: document.getElementById('lastUidSummary'),
-        scanCountSummary: document.getElementById('scanCountSummary'),
-        scanStatusDot: document.getElementById('scanStatusDot'),
-        scanStatusText: document.getElementById('scanStatusText'),
-        scannerShell: document.getElementById('scannerShell'),
-        startButton: document.getElementById('startButton'),
-        stopButton: document.getElementById('stopButton'),
-        clearHistoryButton: document.getElementById('clearHistoryButton'),
-        messages: document.getElementById('messages'),
-        cardType: document.getElementById('cardType'),
-        techType: document.getElementById('techType'),
-        uidValue: document.getElementById('uidValue'),
-        scanTime: document.getElementById('scanTime'),
-        records: document.getElementById('records'),
-        historyList: document.getElementById('historyList')
+        globalDot: $("globalDot"),
+        globalText: $("globalText"),
+        scanDot: $("scanDot"),
+        scanText: $("scanText"),
+        supportValue: $("supportValue"),
+        uidSummary: $("uidSummary"),
+        classSummary: $("classSummary"),
+        countSummary: $("countSummary"),
+        scanner: $("scanner"),
+        startBtn: $("startBtn"),
+        stopBtn: $("stopBtn"),
+        clearBtn: $("clearBtn"),
+        messages: $("messages"),
+        generalClass: $("generalClass"),
+        legalNote: $("legalNote"),
+        techType: $("techType"),
+        uidValue: $("uidValue"),
+        timeValue: $("timeValue"),
+        recordCount: $("recordCount"),
+        records: $("records"),
+        history: $("history")
       };
 
       const state = {
+        supported: "NDEFReader" in window,
+        secure: window.isSecureContext,
+        permissionApi: "permissions" in navigator,
         reader: null,
         abortController: null,
         scanning: false,
         history: [],
-        maxHistory: 5,
-        isSupported: 'NDEFReader' in window,
-        isSecure: window.isSecureContext,
-        hasPermissionApi: 'permissions' in navigator
+        maxHistory: 5
       };
 
       function escapeHtml(value) {
         return String(value)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
       }
 
-      function setStatus(text, type = 'warn', target = 'global') {
-        const dot = target === 'global' ? els.statusDot : els.scanStatusDot;
-        const label = target === 'global' ? els.statusText : els.scanStatusText;
-        dot.className = 'dot ' + type;
-        label.textContent = text;
+      function setGlobalStatus(text, type) {
+        els.globalText.textContent = text;
+        els.globalDot.className = "dot " + type;
       }
 
-      function addNotice(message, type = 'warn', persist = false) {
-        const el = document.createElement('div');
-        el.className = 'notice ' + type;
-        el.innerHTML = message;
-        els.messages.prepend(el);
+      function setScanStatus(text, type) {
+        els.scanText.textContent = text;
+        els.scanDot.className = "dot " + type;
+      }
+
+      function addNotice(message, type = "warn", persist = false) {
+        const box = document.createElement("div");
+        box.className = "notice " + type;
+        if (persist) box.dataset.persist = "1";
+        box.innerHTML = message;
+        els.messages.prepend(box);
+
         if (!persist) {
-          window.setTimeout(() => {
-            el.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(-4px)';
-            window.setTimeout(() => el.remove(), 260);
-          }, 6200);
+          setTimeout(() => {
+            box.style.transition = "opacity .25s ease, transform .25s ease";
+            box.style.opacity = "0";
+            box.style.transform = "translateY(-4px)";
+            setTimeout(() => box.remove(), 260);
+          }, 6500);
         }
       }
 
-      function clearTransientNotices() {
-        [...els.messages.children].forEach((node) => {
-          if (!node.dataset.persist) node.remove();
-        });
-      }
+      function resetNotices() {
+        els.messages.innerHTML = "";
 
-      function setPersistentNotices() {
-        els.messages.innerHTML = '';
-
-        if (!state.isSecure) {
-          const notice = document.createElement('div');
-          notice.className = 'notice warn';
-          notice.dataset.persist = '1';
-          notice.innerHTML = '<strong>HTTPS gerekli:</strong> Web NFC, güvenli bağlam ister. Bu uygulamayı <span class="mono">https://</span> altında veya yerel geliştirmede <span class="mono">localhost</span> üzerinden açın.';
-          els.messages.appendChild(notice);
+        if (!state.secure) {
+          addNotice(
+            "<strong>HTTPS gerekli:</strong> Web NFC yalnızca güvenli bağlamda çalışır. Bu dosyayı <span class='mono'>https://</span> altında veya geliştirmede <span class='mono'>localhost</span> üzerinde açın.",
+            "warn",
+            true
+          );
         }
 
-        if (!state.isSupported) {
-          const notice = document.createElement('div');
-          notice.className = 'notice danger';
-          notice.dataset.persist = '1';
-          notice.innerHTML = '<strong>Web NFC desteklenmiyor:</strong> Bu tarayıcı veya cihaz Web NFC API sunmuyor. Genellikle Android tabanlı ve uyumlu güncel tarayıcılarda kullanılabilir.';
-          els.messages.appendChild(notice);
+        if (!state.supported) {
+          addNotice(
+            "<strong>Web NFC desteklenmiyor:</strong> Bu cihaz veya tarayıcı Web NFC API sunmuyor. Destek pratikte çoğunlukla uyumlu Android tarayıcılarında bulunur.",
+            "danger",
+            true
+          );
         } else {
-          const notice = document.createElement('div');
-          notice.className = 'notice ok';
-          notice.dataset.persist = '1';
-          notice.innerHTML = '<strong>Gizlilik ilkesi:</strong> Uygulama yalnızca tarayıcının erişime açtığı teknik NFC bilgisini gösterir. Kart içeriğini çözmeye çalışmaz ve verileri ağ üzerinden göndermez.';
-          els.messages.appendChild(notice);
+          addNotice(
+            "<strong>Gizlilik:</strong> Bu uygulama yalnızca tarayıcının erişime açtığı teknik bilgileri gösterir; kişisel verileri çözmeye veya ağa göndermeye çalışmaz.",
+            "ok",
+            true
+          );
         }
       }
 
       function formatDate(date) {
-        return new Intl.DateTimeFormat('tr-TR', {
-          dateStyle: 'medium',
-          timeStyle: 'medium'
+        return new Intl.DateTimeFormat("tr-TR", {
+          dateStyle: "medium",
+          timeStyle: "medium"
         }).format(date);
       }
 
-      function decodeTextRecord(record) {
-        try {
-          const decoder = new TextDecoder(record.encoding || 'utf-8');
-          return decoder.decode(record.data);
-        } catch {
-          return 'Metin kaydı çözülemedi';
-        }
-      }
-
-      function decodeUrlRecord(record) {
-        try {
-          return new TextDecoder('utf-8').decode(record.data);
-        } catch {
-          return 'URL kaydı çözülemedi';
-        }
-      }
-
       function decodeRecord(record) {
-        const base = {
-          recordType: record.recordType || 'bilinmiyor',
-          mediaType: record.mediaType || '',
-          id: record.id || '',
-          summary: ''
+        const result = {
+          recordType: record.recordType || "bilinmiyor",
+          mediaType: record.mediaType || "",
+          id: record.id || "",
+          summary: ""
         };
 
         try {
           switch (record.recordType) {
-            case 'text':
-              base.summary = decodeTextRecord(record);
+            case "text": {
+              const decoder = new TextDecoder(record.encoding || "utf-8");
+              result.summary = decoder.decode(record.data);
               break;
-            case 'url':
-            case 'absolute-url':
-              base.summary = decodeUrlRecord(record);
+            }
+            case "url":
+            case "absolute-url": {
+              result.summary = new TextDecoder("utf-8").decode(record.data);
               break;
-            case 'mime': {
-              if ((record.mediaType || '').includes('application/json')) {
-                const raw = new TextDecoder('utf-8').decode(record.data);
+            }
+            case "mime": {
+              if ((record.mediaType || "").includes("application/json")) {
+                const raw = new TextDecoder("utf-8").decode(record.data);
                 try {
-                  base.summary = JSON.stringify(JSON.parse(raw), null, 2);
+                  result.summary = JSON.stringify(JSON.parse(raw), null, 2);
                 } catch {
-                  base.summary = raw;
+                  result.summary = raw;
                 }
-              } else if ((record.mediaType || '').startsWith('text/')) {
-                base.summary = new TextDecoder('utf-8').decode(record.data);
+              } else if ((record.mediaType || "").startsWith("text/")) {
+                result.summary = new TextDecoder("utf-8").decode(record.data);
               } else {
-                base.summary = 'İkili MIME verisi (' + (record.mediaType || 'belirtilmemiş') + ')';
+                result.summary = "İkili MIME verisi (" + (record.mediaType || "belirtilmemiş") + ")";
               }
               break;
             }
-            case 'empty':
-              base.summary = 'Boş NDEF kaydı';
+            case "smart-poster":
+              result.summary = "Smart Poster kaydı algılandı";
               break;
-            case 'smart-poster':
-              base.summary = 'Smart Poster kaydı algılandı';
+            case "empty":
+              result.summary = "Boş NDEF kaydı";
               break;
             default:
-              base.summary = record.mediaType
-                ? 'Özel kayıt türü: ' + record.mediaType
-                : 'Özel veya tarayıcıya özgü kayıt türü';
-              break;
+              result.summary = record.mediaType
+                ? "Özel kayıt türü: " + record.mediaType
+                : "Özel veya tarayıcıya özgü kayıt türü";
           }
         } catch {
-          base.summary = 'Kayıt bilgisi okunurken hata oluştu';
+          result.summary = "Kayıt özeti çözülemedi";
         }
 
-        return base;
-      }
-
-      function guessCardType(serialNumber, records) {
-        const types = new Set(records.map((record) => record.recordType));
-        const mimeTypes = records.map((record) => record.mediaType || '').filter(Boolean);
-
-        if (types.has('smart-poster')) return 'Akıllı afiş etiketi';
-        if (types.has('url') || types.has('absolute-url')) return 'Bağlantı paylaşan NFC etiketi';
-        if (types.has('text')) return 'Metin taşıyan NDEF etiketi';
-        if (mimeTypes.some((type) => type.includes('vcard'))) return 'Kartvizit / kişi bilgisi etiketi';
-        if (mimeTypes.some((type) => type.includes('json'))) return 'Uygulamaya özel veri etiketi';
-        if (serialNumber) return 'NDEF uyumlu NFC etiketi veya kart';
-        return 'Genel NFC etiket / kart';
+        return result;
       }
 
       function guessTechnology(serialNumber, message) {
-        const recordTypes = (message?.records || []).map((r) => r.recordType);
-        const hasNdef = Array.isArray(message?.records) && message.records.length > 0;
+        const hasRecords = Array.isArray(message?.records) && message.records.length > 0;
 
-        if (hasNdef && serialNumber) {
-          return 'NFC Tag (NDEF okunabilir) — düşük seviye teknoloji adı tarayıcı tarafından paylaşılmıyor';
+        if (hasRecords && serialNumber) {
+          return "NDEF okunabilir NFC taşıyıcısı — ISO14443 / MIFARE gibi düşük seviye ayrıntılar tarayıcı tarafından genelde paylaşılmaz";
         }
-
-        if (hasNdef) {
-          return 'NDEF etiketi — ISO14443 / MIFARE gibi ayrıntılar Web NFC ile genelde erişilemez';
+        if (hasRecords) {
+          return "NDEF etiketi — düşük seviye teknoloji bilgisi erişilemedi";
         }
-
-        if (recordTypes.length === 0 && serialNumber) {
-          return 'NFC cihazı algılandı — teknoloji ayrıntısı kullanılamıyor';
+        if (serialNumber) {
+          return "NFC taşıyıcısı algılandı — teknoloji ayrıntısı paylaşılmadı";
         }
-
-        return 'Tarayıcı sınırlaması nedeniyle belirlenemedi';
+        return "Tarayıcı sınırlaması nedeniyle belirlenemedi";
       }
 
-      function renderRecords(records) {
-        els.records.innerHTML = '';
-        if (!records.length) {
-          const empty = document.createElement('div');
-          empty.className = 'notice';
-          empty.textContent = 'NDEF kaydı bulunamadı veya tarayıcı kayıt detaylarını paylaşmadı.';
+      function classifyGeneral(records, serialNumber) {
+        const types = records.map(r => r.recordType);
+        const media = records.map(r => (r.mediaType || "").toLowerCase());
+
+        if (types.includes("smart-poster") || types.includes("url") || types.includes("absolute-url") || types.includes("text")) {
+          return {
+            generalClass: "Genel amaçlı NFC etiketi",
+            legalNote: "Bu sonuç yalnızca teknik ve genel sınıf tahminidir. Resmî kimlik, banka kartı, sahiplik veya içerik tespiti yapılmaz."
+          };
+        }
+
+        if (media.some(v => v.includes("vcard"))) {
+          return {
+            generalClass: "Kartvizit / bilgi paylaşım etiketi",
+            legalNote: "Bu sonuç yalnızca etiket türüne ilişkin genel yorumdur. Kişisel veri çözümleme yapılmaz."
+          };
+        }
+
+        if (records.length === 0 && serialNumber) {
+          return {
+            generalClass: "Temassız kart / erişim taşıyıcısı olabilir",
+            legalNote: "Bu ifade yalnızca genel sınıf tahminidir. Kurumsal kart, erişim etiketi veya başka bir NFC taşıyıcısı olabilir; resmî tespit değildir."
+          };
+        }
+
+        if (serialNumber) {
+          return {
+            generalClass: "NFC kartı veya etiketi",
+            legalNote: "Yalnızca erişilebilen teknik veriye dayalı genel tanımdır. Kartın hukuki niteliği veya kullanım amacı kesin olarak belirlenmez."
+          };
+        }
+
+        return {
+          generalClass: "Sınırlı bilgiyle tanımsız NFC taşıyıcısı",
+          legalNote: "Tarayıcı yeterli teknik bilgi paylaşmadığı için yalnızca sınırlı bir genel değerlendirme yapılabildi."
+        };
+      }
+
+      function parseError(error) {
+        if (!error) return "Bilinmeyen bir hata oluştu.";
+
+        const known = {
+          NotAllowedError: "NFC izni verilmedi. Tarayıcı izinlerini kontrol edin.",
+          NotSupportedError: "Bu cihaz veya tarayıcı Web NFC taramayı desteklemiyor.",
+          NotReadableError: "NFC donanımı şu anda kullanılamıyor. Başka bir uygulama kullanıyor olabilir.",
+          InvalidStateError: "NFC okuyucu uygun durumda değil. Sayfayı yenileyip yeniden deneyin.",
+          SecurityError: "Güvenlik kısıtı nedeniyle işlem engellendi. HTTPS gerekli olabilir.",
+          AbortError: "Tarama durduruldu.",
+          NetworkError: "NFC bağlantısı başlatılamadı. Cihazın NFC ayarını kontrol edin.",
+          UnknownError: "Beklenmeyen bir NFC hatası oluştu."
+        };
+
+        return known[error.name] || error.message || "Beklenmeyen bir hata oluştu.";
+      }
+
+      async function permissionState() {
+        if (!state.permissionApi) return "bilinmiyor";
+        try {
+          const result = await navigator.permissions.query({ name: "nfc" });
+          return result.state || "bilinmiyor";
+        } catch {
+          return "bilinmiyor";
+        }
+      }
+
+      async function refreshSupport() {
+        const permission = await permissionState();
+
+        if (!state.supported) {
+          els.supportValue.textContent = "Destek yok";
+          setGlobalStatus("Web NFC desteklenmiyor", "danger");
+          setScanStatus("Başlatılamıyor", "danger");
+          els.startBtn.disabled = true;
+          els.stopBtn.disabled = true;
+          return;
+        }
+
+        if (!state.secure) {
+          els.supportValue.textContent = "HTTPS gerekli";
+          setGlobalStatus("HTTPS bekleniyor", "warn");
+          setScanStatus("Güvenli bağlam gerekli", "warn");
+          els.startBtn.disabled = true;
+          els.stopBtn.disabled = true;
+          return;
+        }
+
+        if (permission === "granted") {
+          els.supportValue.textContent = "Hazır";
+        } else if (permission === "prompt") {
+          els.supportValue.textContent = "İzin isteyecek";
+        } else if (permission === "denied") {
+          els.supportValue.textContent = "İzin reddedildi";
+        } else {
+          els.supportValue.textContent = "Uyumlu";
+        }
+
+        setGlobalStatus("Web NFC hazır", "ok");
+        setScanStatus("Tarama için bekliyor", "warn");
+        els.startBtn.disabled = false;
+      }
+
+      function renderRecords(decodedRecords) {
+        els.records.innerHTML = "";
+
+        if (!decodedRecords.length) {
+          const empty = document.createElement("div");
+          empty.className = "notice";
+          empty.textContent = "NDEF kaydı bulunamadı veya tarayıcı kayıt ayrıntılarını paylaşmadı.";
           els.records.appendChild(empty);
           return;
         }
 
-        records.forEach((record, index) => {
-          const item = document.createElement('div');
-          item.className = 'record';
+        decodedRecords.forEach((record, index) => {
+          const item = document.createElement("div");
+          item.className = "record";
           item.innerHTML = `
             <div class="record-head">
               <strong>Kayıt ${index + 1}</strong>
               <span class="pill">${escapeHtml(record.recordType)}</span>
             </div>
-            <div class="record-body">${escapeHtml(record.summary || 'Özet yok')}</div>
-            <div class="history-chips" style="margin-top:10px;">
-              ${record.mediaType ? `<span class="pill">MIME: ${escapeHtml(record.mediaType)}</span>` : ''}
-              ${record.id ? `<span class="pill">ID: ${escapeHtml(record.id)}</span>` : ''}
+            <div class="record-body">${escapeHtml(record.summary || "Özet yok")}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+              ${record.mediaType ? `<span class="pill">MIME: ${escapeHtml(record.mediaType)}</span>` : ""}
+              ${record.id ? `<span class="pill">ID: ${escapeHtml(record.id)}</span>` : ""}
             </div>
           `;
           els.records.appendChild(item);
         });
       }
 
-      function updateCurrentView(scan) {
-        els.cardType.textContent = scan.cardType;
+      function updateCurrent(scan) {
+        els.generalClass.textContent = scan.generalClass;
+        els.legalNote.textContent = scan.legalNote;
         els.techType.textContent = scan.techType;
-        els.uidValue.textContent = scan.uid || 'Tarayıcı paylaşmadı';
-        els.scanTime.textContent = scan.timeLabel;
-        els.lastUidSummary.textContent = scan.uid || 'Yok';
+        els.uidValue.textContent = scan.uid || "Tarayıcı paylaşmadı";
+        els.timeValue.textContent = scan.timeLabel;
+        els.recordCount.textContent = scan.records.length
+          ? scan.records.length + " kayıt algılandı"
+          : "Kayıt ayrıntısı paylaşılmadı";
+        els.uidSummary.textContent = scan.uid || "Yok";
+        els.classSummary.textContent = scan.generalClass;
         renderRecords(scan.records);
       }
 
       function renderHistory() {
-        els.scanCountSummary.textContent = String(state.history.length);
-        els.historyList.innerHTML = '';
+        els.countSummary.textContent = String(state.history.length);
+        els.history.innerHTML = "";
 
         if (!state.history.length) {
-          const empty = document.createElement('div');
-          empty.className = 'history-empty';
-          empty.textContent = 'Henüz kayıtlı tarama bulunmuyor. İlk NFC etiketini algıladığınızda burada listelenecek.';
-          els.historyList.appendChild(empty);
+          const empty = document.createElement("div");
+          empty.className = "history-empty";
+          empty.textContent = "Henüz tarama kaydı yok.";
+          els.history.appendChild(empty);
           return;
         }
 
         state.history.forEach((item) => {
-          const node = document.createElement('article');
-          node.className = 'history-item';
+          const node = document.createElement("article");
+          node.className = "history-item";
           node.innerHTML = `
             <div class="history-top">
               <div>
-                <div class="history-title">${escapeHtml(item.cardType)}</div>
+                <div class="history-title">${escapeHtml(item.generalClass)}</div>
                 <div class="history-meta">${escapeHtml(item.timeLabel)}</div>
               </div>
-              <div class="history-chips">
-                <span class="pill">${escapeHtml(item.techTypeShort)}</span>
-              </div>
+              <span class="pill">${escapeHtml(item.techShort)}</span>
             </div>
-            <div class="history-meta"><strong>UID:</strong> <span class="mono">${escapeHtml(item.uid || 'Paylaşılmadı')}</span></div>
+            <div class="history-meta"><strong>UID:</strong> <span class="mono">${escapeHtml(item.uid || "Paylaşılmadı")}</span></div>
           `;
-          node.addEventListener('click', () => updateCurrentView(item));
-          els.historyList.appendChild(node);
+          node.addEventListener("click", () => updateCurrent(item));
+          els.history.appendChild(node);
         });
       }
 
@@ -946,100 +976,38 @@
         renderHistory();
       }
 
-      function parseError(error) {
-        if (!error) return 'Bilinmeyen bir hata oluştu.';
-
-        const name = error.name || '';
-        const map = {
-          NotAllowedError: 'NFC izni verilmedi. Tarayıcı izinlerini kontrol edin ve yeniden deneyin.',
-          NotSupportedError: 'Bu cihaz veya tarayıcı Web NFC taramasını desteklemiyor.',
-          NotReadableError: 'NFC donanımı şu anda kullanılamıyor. Başka bir uygulama kullanıyor olabilir.',
-          InvalidStateError: 'NFC tarayıcı şu anda uygun durumda değil. Sayfayı yenileyip tekrar deneyin.',
-          SecurityError: 'Güvenlik kısıtı nedeniyle işlem engellendi. Uygulamayı HTTPS altında açın.',
-          AbortError: 'Tarama durduruldu.',
-          NetworkError: 'NFC bağlantısı başlatılamadı. Cihazın NFC ayarını kontrol edin.',
-          UnknownError: 'Beklenmeyen bir NFC hatası oluştu. Tekrar deneyin.'
-        };
-
-        return map[name] || error.message || 'Beklenmeyen bir hata oluştu.';
-      }
-
-      async function queryPermissionState() {
-        if (!state.hasPermissionApi) return 'bilinmiyor';
-        try {
-          const result = await navigator.permissions.query({ name: 'nfc' });
-          return result.state || 'bilinmiyor';
-        } catch {
-          return 'bilinmiyor';
-        }
-      }
-
-      async function refreshSupportState() {
-        const permissionState = await queryPermissionState();
-
-        if (!state.isSupported) {
-          els.supportSummary.textContent = 'Destek yok';
-          setStatus('Web NFC desteklenmiyor', 'danger', 'global');
-          setStatus('Başlatılamıyor', 'danger', 'scan');
-          els.startButton.disabled = true;
-          els.stopButton.disabled = true;
-          return;
-        }
-
-        if (!state.isSecure) {
-          els.supportSummary.textContent = 'HTTPS gerekli';
-          setStatus('HTTPS bekleniyor', 'warn', 'global');
-          setStatus('Güvenli bağlam gerekli', 'warn', 'scan');
-          els.startButton.disabled = true;
-          els.stopButton.disabled = true;
-          return;
-        }
-
-        els.supportSummary.textContent = permissionState === 'granted'
-          ? 'Hazır'
-          : permissionState === 'prompt'
-            ? 'İzin isteyecek'
-            : permissionState === 'denied'
-              ? 'İzin reddedildi'
-              : 'Uyumlu';
-
-        setStatus('Web NFC hazır', 'ok', 'global');
-        setStatus('Tarama için bekliyor', 'warn', 'scan');
-        els.startButton.disabled = false;
-      }
-
       function stopScan(showNotice = true) {
-        if (state.abortController) {
-          state.abortController.abort();
-        }
+        if (state.abortController) state.abortController.abort();
         state.abortController = null;
         state.reader = null;
         state.scanning = false;
-        els.scannerShell.classList.remove('scanning');
-        els.startButton.disabled = !state.isSupported || !state.isSecure;
-        els.stopButton.disabled = true;
-        if (state.isSupported && state.isSecure) {
-          setStatus('Web NFC hazır', 'ok', 'global');
-          setStatus('Tarama durduruldu', 'warn', 'scan');
+        els.scanner.classList.remove("scanning");
+        els.stopBtn.disabled = true;
+        els.startBtn.disabled = !(state.supported && state.secure);
+
+        if (state.supported && state.secure) {
+          setGlobalStatus("Web NFC hazır", "ok");
+          setScanStatus("Tarama durduruldu", "warn");
         }
-        if (showNotice) addNotice('Tarama güvenli şekilde durduruldu.', 'ok');
+
+        if (showNotice) {
+          addNotice("Tarama güvenli şekilde durduruldu.", "ok");
+        }
       }
 
       async function startScan() {
-        clearTransientNotices();
-
-        if (!state.isSupported) {
-          addNotice('Bu cihazda veya tarayıcıda <strong>Web NFC</strong> desteği bulunmuyor.', 'danger');
+        if (!state.supported) {
+          addNotice("Bu cihazda veya tarayıcıda <strong>Web NFC</strong> desteği bulunmuyor.", "danger");
           return;
         }
 
-        if (!state.isSecure) {
-          addNotice('Bu uygulamayı kullanmak için sayfanın <strong>HTTPS</strong> altında açılması gerekir.', 'warn');
+        if (!state.secure) {
+          addNotice("Bu dosyayı kullanmak için sayfanın <strong>HTTPS</strong> altında açılması gerekir.", "warn");
           return;
         }
 
         if (state.scanning) {
-          addNotice('Tarama zaten aktif. Etiketi cihaza yaklaştırabilirsiniz.', 'warn');
+          addNotice("Tarama zaten aktif. Kartı telefona yaklaştırabilirsiniz.", "warn");
           return;
         }
 
@@ -1047,78 +1015,83 @@
           state.reader = new NDEFReader();
           state.abortController = new AbortController();
 
-          setStatus('Tarama başlatılıyor', 'scan', 'global');
-          setStatus('Etiket bekleniyor', 'scan', 'scan');
-          els.scannerShell.classList.add('scanning');
-          els.startButton.disabled = true;
-          els.stopButton.disabled = false;
+          setGlobalStatus("Tarama başlatılıyor", "scan");
+          setScanStatus("Etiket bekleniyor", "scan");
+          els.scanner.classList.add("scanning");
+          els.startBtn.disabled = true;
+          els.stopBtn.disabled = false;
 
           await state.reader.scan({ signal: state.abortController.signal });
           state.scanning = true;
-          addNotice('Tarama aktif. NFC etiketini telefonunuza yaklaştırın.', 'ok');
+          addNotice("Tarama aktif. Uyumlu NFC kartını veya etiketini telefona yaklaştırın.", "ok");
 
-          state.reader.addEventListener('readingerror', () => {
-            addNotice('Etiket algılandı ancak teknik kayıtlar okunamadı. Etiket NDEF uyumlu olmayabilir.', 'warn');
+          state.reader.addEventListener("readingerror", () => {
+            addNotice("Etiket algılandı ancak kayıtlar okunamadı. Etiket NDEF uyumlu olmayabilir.", "warn");
           });
 
-          state.reader.addEventListener('reading', (event) => {
-            const time = new Date();
+          state.reader.addEventListener("reading", (event) => {
+            const now = new Date();
             const decodedRecords = (event.message?.records || []).map(decodeRecord);
-            const uid = event.serialNumber || '';
-            const cardType = guessCardType(uid, event.message?.records || []);
+            const uid = event.serialNumber || "";
             const techType = guessTechnology(uid, event.message);
+            const classification = classifyGeneral(decodedRecords, uid);
+
             const scan = {
               uid,
-              cardType,
+              generalClass: classification.generalClass,
+              legalNote: classification.legalNote,
               techType,
-              techTypeShort: techType.split('—')[0].trim(),
-              timeLabel: formatDate(time),
-              timestamp: time.getTime(),
+              techShort: techType.split("—")[0].trim(),
+              timeLabel: formatDate(now),
+              timestamp: now.getTime(),
               records: decodedRecords
             };
 
-            updateCurrentView(scan);
+            updateCurrent(scan);
             pushHistory(scan);
-            setStatus('NFC cihazı algılandı', 'ok', 'global');
-            setStatus('Tarama aktif', 'scan', 'scan');
-            addNotice('Yeni NFC etiketi algılandı. Teknik bilgiler güncellendi.', 'ok');
+            setGlobalStatus("NFC taşıyıcısı algılandı", "ok");
+            setScanStatus("Tarama aktif", "scan");
+            addNotice("Yeni NFC taşıyıcısı algılandı. Genel sınıf tahmini güncellendi.", "ok");
           }, { signal: state.abortController.signal });
+
         } catch (error) {
           stopScan(false);
-          const message = parseError(error);
-          setStatus('Tarama başlatılamadı', 'danger', 'global');
-          setStatus('Hata oluştu', 'danger', 'scan');
-          addNotice('<strong>Tarama hatası:</strong> ' + escapeHtml(message), 'danger');
+          setGlobalStatus("Tarama başlatılamadı", "danger");
+          setScanStatus("Hata oluştu", "danger");
+          addNotice("<strong>Tarama hatası:</strong> " + escapeHtml(parseError(error)), "danger");
         }
       }
 
       function clearHistory() {
         state.history = [];
         renderHistory();
-        els.lastUidSummary.textContent = 'Henüz yok';
-        addNotice('Tarama geçmişi temizlendi.', 'ok');
+        els.uidSummary.textContent = "Henüz yok";
+        els.classSummary.textContent = "Henüz yok";
+        addNotice("Geçmiş temizlendi.", "ok");
       }
 
-      function bindEvents() {
-        els.startButton.addEventListener('click', startScan);
-        els.stopButton.addEventListener('click', () => stopScan(true));
-        els.clearHistoryButton.addEventListener('click', clearHistory);
-        document.addEventListener('visibilitychange', () => {
+      function bind() {
+        els.startBtn.addEventListener("click", startScan);
+        els.stopBtn.addEventListener("click", () => stopScan(true));
+        els.clearBtn.addEventListener("click", clearHistory);
+
+        document.addEventListener("visibilitychange", () => {
           if (document.hidden && state.scanning) {
             stopScan(false);
-            addNotice('Sayfa arka plana alındığı için tarama durduruldu.', 'warn');
+            addNotice("Sayfa arka plana alındığı için tarama durduruldu.", "warn");
           }
         });
-        window.addEventListener('beforeunload', () => {
+
+        window.addEventListener("beforeunload", () => {
           if (state.abortController) state.abortController.abort();
         });
       }
 
       async function init() {
-        setPersistentNotices();
-        bindEvents();
+        resetNotices();
         renderHistory();
-        await refreshSupportState();
+        bind();
+        await refreshSupport();
       }
 
       init();
